@@ -1,0 +1,7 @@
+<nav>
+    <ul class="pager">
+        <li class="previous"><a href="/admin/user?page={{Math.min(page - 1,2)}}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+        一共有{{count}}条数据，每页显示{{limit}}条数据，一共{{pages}}页，当前第{{page}}页
+        <li class="next"><a href="/admin/user?page={{Math.min(page + 1,pages)}}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+    </ul>
+</nav>

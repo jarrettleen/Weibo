@@ -5,6 +5,7 @@ var router = express.Router();
 
 var User = require('../models/User');
 var Category = require('../models/Category');
+var Content = require('../models/Content');
 
 router.use(function (req,res,next) {
    if(!req.userInfo.isAdmin){
@@ -268,8 +269,37 @@ router.get('/category/delete',function (req,res) {
 
 router.get('/content',function (req,res) {
 
-    res.render('admin/content_index',{
-        userInfo:req.userInfo
+    var page = Number(req.query.page || 1);
+    var limit = 10;
+    var pages = 0;
+    Content.count().then(function (count) {
+
+        //计算总页数
+        pages = Math.ceil(count / limit);
+        //取值不能超过pages
+        page = Math.min( page,pages );
+        //取值不能小于1
+        page = Math.max( page,1 );
+
+        var skip = (page - 1) * limit;
+
+        /**
+         * sort
+         * 1代表升序
+         * -1代表降序
+         * **/
+
+        Content.find().sort({_id:-1}).limit(limit).skip(skip).then(function (contents) {
+            res.render('admin/content_index',{
+                userInfo:req.userInfo,
+                contents:contents,
+
+                count,
+                page,
+                pages,
+                limit
+            })
+        });
     });
 
 });
@@ -287,6 +317,44 @@ router.get('/content/add',function (req,res) {
             categories:categories
         });
     });
+
+});
+
+
+/**
+ * 内容保存
+ * **/
+router.post('/content/add',function (req,res) {
+
+    if( req.body.category == '' ){
+        res.render('admin/error',{
+            userInfo:req.userInfo,
+            massage:'内容分类不能为空'
+        });
+        return;
+    }
+
+    if( req.body.title == '' ){
+        res.render('admin/error',{
+            userInfo:req.userInfo,
+            massage:'内容标题不能为空'
+        });
+        return;
+    }
+
+    //保存数据到数据库
+    new Content({
+        category: req.body.category,
+        title:req.body.title,
+        description:req.body.description,
+        content:req.body.content
+    }).save().then(function () {
+        res.render('admin/success',{
+            userInfo:req.userInfo,
+            massage:'内容保存成功',
+            url:'/admin/content'
+        });
+    })
 
 });
 

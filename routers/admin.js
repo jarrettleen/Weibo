@@ -289,7 +289,7 @@ router.get('/content',function (req,res) {
          * -1代表降序
          * **/
 
-        Content.find().sort({_id:-1}).limit(limit).skip(skip).then(function (contents) {
+        Content.find().sort({_id:-1}).limit(limit).skip(skip).populate(['category', 'user']).then(function (contents) {
             res.render('admin/content_index',{
                 userInfo:req.userInfo,
                 contents:contents,
@@ -346,6 +346,7 @@ router.post('/content/add',function (req,res) {
     new Content({
         category: req.body.category,
         title:req.body.title,
+        user:req.userInfo._id.toString(),
         description:req.body.description,
         content:req.body.content
     }).save().then(function () {
@@ -355,6 +356,98 @@ router.post('/content/add',function (req,res) {
             url:'/admin/content'
         });
     })
+
+});
+
+/**
+ * 修改内容
+ * **/
+
+router.get('/content/edit',function (req,res) {
+
+    var id = req.query.id || '';
+
+    Content.findOne({
+        _id: id
+    }).populate('category').then(function (content) {
+        if(!content){
+            res.render('admin/error',{
+                userInfo:req.userInfo,
+                massage:'指定内容不存在'
+            });
+            return Promise.reject();
+        } else {
+            Category.find().then(function (categories) {
+                res.render('admin/content_edit',{
+                    userInfo:req.userInfo,
+                    content:content,
+                    categories:categories
+                })
+            });
+        }
+    });
+
+
+});
+
+/**
+ * 保存修改内容
+ * **/
+
+router.post('/content/edit',function (req,res) {
+
+    var id = req.query.id || '';
+
+    if( req.body.category == '' ){
+        res.render('admin/error',{
+            userInfo:req.userInfo,
+            massage:'内容分类不能为空'
+        });
+        return;
+    }
+
+    if( req.body.title == '' ){
+        res.render('admin/error',{
+            userInfo:req.userInfo,
+            massage:'内容标题不能为空'
+        });
+        return;
+    }
+
+    Content.update({
+        _id:id
+    },{
+        category: req.body.category,
+        title:req.body.title,
+        description:req.body.description,
+        content:req.body.content
+    }).then(function () {
+        res.render('admin/success',{
+            userInfo:req.userInfo,
+            massage:'修改成功',
+            url:'/admin/content/edit?id=' + id
+        })
+    })
+
+});
+
+/**
+ * 内容删除
+ * **/
+
+router.get('/content/delete',function (req,res) {
+
+    var id = req.query.id || '';
+
+    Content.remove({
+        _id : id
+    }).then(function () {
+        res.render('admin/success',{
+            userInfo:req.userInfo,
+            massage:'删除成功',
+            url:'/admin/content'
+        });
+    });
 
 });
 
